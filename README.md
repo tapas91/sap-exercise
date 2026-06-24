@@ -273,5 +273,8 @@ generated={
   "aggregate_sql": "",
   "row_sql": "SELECT order_id, customer_id, order_date, amount, currency FROM orders WHERE order_date >= DATE((SELECT MAX(order_date) FROM orders), '-5 days') ORDER BY order_date DESC LIMIT 5"
 } token_count=1066
-INFO - Ask request answered: question='Show me most recent 5 orders by combining customer ID with the currency using the CONCAT function.' sql="SELECT order_id, customer_id, order_date, amount, currency FROM orders WHERE order_date >= DATE((SELECT MAX(order_date) FROM orders), '-5 days') ORDER BY order_date DESC LIMIT 5" token_count=2047```
+INFO - Ask request answered: question='Show me most recent 5 orders by combining customer ID with the currency using the CONCAT function.' sql="SELECT order_id, customer_id, order_date, amount, currency FROM orders WHERE order_date >= DATE((SELECT MAX(order_date) FROM orders), '-5 days') ORDER BY order_date DESC LIMIT 5" token_count=2047
+```
 
+## Part 4d — Architectural Extension
+Check Arch.md
