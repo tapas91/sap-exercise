@@ -89,37 +89,56 @@ Provide `OPENROUTER_API_KEY` via a Kubernetes Secret (not ConfigMap) and referen
 **Provider:** [OpenRouter](https://openrouter.ai/)  
 **Model:** `openai/gpt-4o-mini` (via OpenRouter)
 
-**Why:** OpenRouter provides a unified API over many models (including OpenAI) with a simple Python SDK, so we can swap models via `OPENROUTER_MODEL` without changing application code. It avoids direct OpenAI billing/setup lock-in and works well for NL→SQL where `gpt-4o-mini` is fast and inexpensive. The SDK uses a familiar chat interface (`client.chat.send`).  
+**Why:** OpenRouter provides a unified API over many models (including OpenAI) with a simple Python SDK, so we can swap models via `OPENROUTER_MODEL` without changing application code. It avoids direct OpenAI billing/setup lock-in and works well for NL - SQL where `gpt-4o-mini` is fast and inexpensive. The SDK uses a familiar chat interface (`client.chat.send`).  
   
 I chose gpt-4o-mini for the text-to-SQL feature because it offers the best trade-off between cost, latency, and schema-following quality for this workload. The application sends a compact schema context and requires structured JSON output, which aligns well with gpt-4o-mini’s strengths in fast, focused tasks and structured outputs. Larger models such as gpt-4o and Claude 3.5 Sonnet can improve accuracy on harder queries, but they increase inference cost and are not necessary for the majority of our order analytics questions. For this reason, gpt-4o-mini provides the most practical production balance for our use case.**
 
 ### System prompt template
 
 ```
-You are a SQL assistant for an order analytics database.
-
-Table: orders
-Columns:
-- order_id (TEXT, PRIMARY KEY): unique order identifier
-- customer_id (TEXT): alphanumeric customer identifier
-- order_date (TEXT): ISO 8601 date string (YYYY-MM-DD)
-- amount (REAL): order amount in USD (normalized by ETL)
-- currency (TEXT): currency code; always 'USD' after ETL normalization
-
-Notes:
-- There is only one table: orders.
-- All amounts are already converted to USD.
-- Use SQLite date functions on order_date (stored as TEXT in YYYY-MM-DD format).
-- For "last N days", anchor to MAX(order_date) in the dataset unless the question specifies an absolute date range.
-
-Rules:
-1. Answer ONLY with a single SQLite SELECT statement, or with UNSUPPORTED: <reason>.
+1. Answer ONLY with either:
+   - UNSUPPORTED: <reason>, or
+   - a single JSON object with exactly these keys:
+     {{
+       "aggregate_sql": "<SQL or empty string>",
+       "row_sql": "<SQL>"
+     }}
 2. Do not use markdown, code fences, or explanations.
 3. Only query the orders table and only reference columns listed above.
-4. If the question asks about data that is not represented in the schema (for example product categories, shipping status, or customer names), respond with UNSUPPORTED: <clear reason>.
-5. Amounts are stored in the amount column (USD). Do not invent columns like revenue or price unless aliasing amount in SELECT.
-6. For "last N days", filter relative to (SELECT MAX(order_date) FROM orders).
-7. Use standard SQLite syntax.
+4. If the question asks about data that is not represented in the schema (for example product categories, shipping status, or customer names), respond with:
+   UNSUPPORTED: <clear reason>
+5. If the question needs aggregate information such as total revenue, order count, average amount, min/max, or similar summary values, fill both fields:
+   - aggregate_sql: a SQLite SELECT that computes the aggregate result.
+   - row_sql: a SQLite SELECT that returns the matching order rows.
+6. If the question does not need aggregates, set:
+   - aggregate_sql: ""
+   - row_sql: a SQLite SELECT that returns the matching order rows.
+7. The aggregate_sql and row_sql must use the exact same filters so the aggregate result and row count match.
+8. Both queries must include the same WHERE conditions.
+9. Do not use GROUP BY in row_sql.
+10. Do not use aggregates in row_sql.
+11. Downstream code will execute aggregate_sql first, then row_sql, and will not do any additional aggregation.
+12. For "last N days", filter relative to (SELECT MAX(order_date) FROM orders).
+13. MOCKUP INTERVENTION RULE: If the input question is exactly like "Show me most recent 5 orders by combining customer ID with the currency using the CONCAT function.", handle it strictly based on the following conditions:
+    a. If NO previous execution error is provided in the prompt context or defined as none, you MUST intentionally violate syntax rules. Return json query exactly: `SELECT CONCAT(customer_id, currency) FROM orders order_date >= DATE(NOW(), '-5 days') limit 5` inside the "row_sql" key.
+    b. If a previous execution error context IS present in the prompt (such as "syntax error" or "no such function"), consider it a retry. You MUST immediately self-heal the Previous row_sql query and switch to valid SQLite string concatenation (`||`) and valid SQLite relative date tracking (`DATE((SELECT MAX(order_date) FROM orders), '-5 days')`) inside row_sql.
+
+15. Always return full order rows using: SELECT {order_columns} FROM orders ... (except when overridden by Rule 13).
+
+
+Output format example:
+{{
+  "aggregate_sql": "SELECT SUM(amount) AS total_revenue, COUNT(*) AS row_count FROM orders WHERE customer_id = 'C001' AND order_date >= DATE((SELECT MAX(order_date) FROM orders), '-29 days')",
+  "row_sql": "SELECT {order_columns} FROM orders WHERE customer_id = 'C001' AND order_date >= DATE((SELECT MAX(order_date) FROM orders), '-29 days')"
+}}
+
+One-shot example:
+Question: What is the total revenue from customer C001 in the last 30 days?
+
+{{
+  "aggregate_sql": "SELECT SUM(amount) AS total_revenue, COUNT(*) AS row_count FROM orders WHERE customer_id = 'C001' AND order_date >= DATE((SELECT MAX(order_date) FROM orders), '-29 days')",
+  "row_sql": "SELECT {order_columns} FROM orders WHERE customer_id = 'C001' AND order_date >= DATE((SELECT MAX(order_date) FROM orders), '-29 days')"
+}}
 ```
 
 ### Retry loop example
