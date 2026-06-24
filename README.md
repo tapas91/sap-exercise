@@ -246,5 +246,10 @@ The index is rebuilt in three places:
 - Rebuilds take a module-level `_rebuild_lock` to ensure that only one thread can trigger a heavy index generation at any given time.
 - A new index is built completely in local variables, then swapped into shared state under a short lock. In-flight searches against the previous index object continue safely until the swap completes.
 
+---
+
+## Part 4c — LangGraph Agent
+
+<img width="770" height="577" alt="Screenshot 2026-06-24 at 4 30 49 PM" src="https://github.com/user-attachments/assets/879fe7f0-bd8e-4f50-89ec-0cce794758d5" />
 
 
