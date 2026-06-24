@@ -6,6 +6,7 @@
 | One index per tenant | Highest memory usage and more index overhead | Best isolation, often more predictable latency per tenant | Lowest risk of cross-tenant leakage | Highest operational overhead |
 
 One index per tenant is a better approch, however a hybrid approach could be a better option.
+
 **The Hybrid Approach:**
 
 To balance strict data sovereignty with infrastructure costs, we can group and split the 50 tenants using a two-layered hybrid model:
