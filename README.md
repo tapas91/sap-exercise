@@ -250,6 +250,6 @@ The index is rebuilt in three places:
 
 ## Part 4c — LangGraph Agent
 
-<img width="400" height="400" alt="Screenshot 2026-06-24 at 4 30 49 PM" src="https://github.com/user-attachments/assets/879fe7f0-bd8e-4f50-89ec-0cce794758d5" />
+<img width="600" height="400" alt="Screenshot 2026-06-24 at 4 30 49 PM" src="https://github.com/user-attachments/assets/879fe7f0-bd8e-4f50-89ec-0cce794758d5" />
 
 
