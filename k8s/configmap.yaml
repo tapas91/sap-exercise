@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orders-api-config
+  labels:
+    app: orders-api
+data:
+  ORDERS_CSV_PATH: "/data/orders_cleaned.csv"
+  ORDERS_DB_PATH: "/data/orders.db"
+  OPENROUTER_MODEL: "openai/gpt-4o-mini"

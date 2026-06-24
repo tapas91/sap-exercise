@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pandas
+openrouter
+sentence-transformers
+faiss-cpu
+numpy
+aiosqlite
+langgraph
