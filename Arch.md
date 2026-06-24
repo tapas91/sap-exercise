@@ -5,7 +5,8 @@
 | Shared index + namespace filter | Lowest memory usage, one copy of infra | Usually fastest to start, but can degrade with many tenants | Highest risk if filter is missed, bypassed, or misconfigured | Lowest upfront, but hardest to secure |
 | One index per tenant | Highest memory usage and more index overhead | Best isolation, often more predictable latency per tenant | Lowest risk of cross-tenant leakage | Highest operational overhead |
 
-The Hybrid Approach:
+One index per tenant is a better approch, however a hybrid approach could be a better option.
+**The Hybrid Approach:**
 
 To balance strict data sovereignty with infrastructure costs, we can group and split the 50 tenants using a two-layered hybrid model:
 
