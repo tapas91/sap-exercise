@@ -252,4 +252,26 @@ The index is rebuilt in three places:
 
 <img width="600" height="400" alt="Screenshot 2026-06-24 at 4 30 49 PM" src="https://github.com/user-attachments/assets/879fe7f0-bd8e-4f50-89ec-0cce794758d5" />
 
+** Log trace **
+'''INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO - NL_to_SQL request: model=openai/gpt-4o-mini prompt=[{"role": "system", "content": "You are a SQL ....
+generated={
+  "aggregate_sql": "",
+  "row_sql": "SELECT CONCAT(customer_id, currency) FROM orders order_date >= DATE(NOW(), '-5 days') limit 5"
+} token_count=981
+WARNING - Routing back to sql_writer for retry attempt #1
+INFO - NL_to_SQL user_content: Show me most recent 5 orders by combining customer ID with the currency using the CONCAT function.
+
+The previous SQL failed with this error:
+near ">=": syntax error
+Fix the SQL and return a corrected JSON object with aggregate_sql and row_sql, or UNSUPPORTED: <reason>.Previous row_sql was:
+SELECT CONCAT(customer_id, currency) FROM orders order_date >= DATE(NOW(), '-5 days') limit 5 
+
+INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-24 21:44:57,338 - INFO - NL_to_SQL request: model=openai/gpt-4o-mini prompt=[{"role": "system", "content": "You are a SQL...
+generated={
+  "aggregate_sql": "",
+  "row_sql": "SELECT order_id, customer_id, order_date, amount, currency FROM orders WHERE order_date >= DATE((SELECT MAX(order_date) FROM orders), '-5 days') ORDER BY order_date DESC LIMIT 5"
+} token_count=1066
+INFO - Ask request answered: question='Show me most recent 5 orders by combining customer ID with the currency using the CONCAT function.' sql="SELECT order_id, customer_id, order_date, amount, currency FROM orders WHERE order_date >= DATE((SELECT MAX(order_date) FROM orders), '-5 days') ORDER BY order_date DESC LIMIT 5" token_count=2047'''
 
