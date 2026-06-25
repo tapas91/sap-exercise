@@ -1,11 +1,11 @@
-## Tenant isolation for the vector index — one shared FAISS index with namespace filtering, or one index per tenant? What are the memory, latency, and data-leakage trade-offs?
+## Tenant isolation for the vector index — one shared FAISS index with namespace filtering, or one index per tenant?
 
 | Option | Memory | Latency | Data leakage risk | Operational burden |
 |---|---|---|---|---|
 | Shared index + namespace filter | Lowest memory usage, one copy of infra | Usually fastest to start, but can degrade with many tenants | Highest risk if filter is missed, bypassed, or misconfigured | Lowest upfront, but hardest to secure |
 | One index per tenant | Highest memory usage and more index overhead | Best isolation, often more predictable latency per tenant | Lowest risk of cross-tenant leakage | Highest operational overhead |
 
-One index per tenant is a better approch, however a hybrid approach could be a better option.
+One index per tenant is a better approch, however a hybrid approach could be put into consideration.
 
 **The Hybrid Approach:**
 
