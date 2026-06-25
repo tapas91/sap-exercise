@@ -195,8 +195,8 @@ def semantic_order_search(
 @app.post("/orders/ask", response_model=AskResponse)
 async def orders_ask(request: AskRequest) -> AskResponse:
     try:
-        # result = await ask_question(request.question.strip())
-        result = await ask_question_with_agent(request.question.strip())
+        result = await ask_question(request.question.strip())
+        # result = await ask_question_with_agent(request.question.strip())
     except UnsupportedQuestionError as exc:
         logger.error(f"Ask request failed: Unsupported question: {exc.message}")
         raise HTTPException(status_code=400, detail=exc.message) from exc
