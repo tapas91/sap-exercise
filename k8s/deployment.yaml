@@ -1,47 +1,270 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: orders-api
-  labels:
-    app: orders-api
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: orders-api
-  template:
-    metadata:
-      labels:
-        app: orders-api
-    spec:
-      containers:
-        - name: orders-api
-          image: orders-api:latest
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 8000
-          envFrom:
-            - configMapRef:
-                name: orders-api-config
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 30
-            timeoutSeconds: 3
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 3
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
+openapi: 3.1.0
+info:
+  title: Orders API
+  version: 1.0.0
+  description: API for managing orders, running analytics stats, and executing NL-to-SQL or semantic searches over order history.
+paths:
+  /healthz:
+    get:
+      summary: Liveness Probe
+      description: Basic healthcheck endpoint returning plain text confirmation if the service wrapper is running.
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+
+  /readyz:
+    get:
+      summary: Readiness Probe
+      description: Validates if internal dependencies like the SQLite database cache and semantic vector indices are loaded and ready to serve queries.
+      responses:
+        '200':
+          description: Indexes are warmed and ready.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+        '503':
+          description: Service Unavailable. Datasets or background search vectors are still compiling.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPException'
+
+  /orders/customer/{customer_id}:
+    get:
+      summary: Get Orders By Customer ID
+      description: Retrieves all recorded order rows associated with a unique customer identifier.
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          description: Unique identifier string for the target account.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response containing customer records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+
+  /orders/stats:
+    get:
+      summary: Get Order Statistics
+      description: Computes aggregate performance analytics including total pipeline revenue, mean order amounts, and daily volume distribution tracking.
+      responses:
+        '200':
+          description: Successfully compiled dataset aggregates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+
+  /orders/recent:
+    get:
+      summary: Get Recent Orders
+      description: Returns chronological listings of historical orders based on a relative look-back time window constraint.
+      parameters:
+        - name: days
+          in: query
+          required: true
+          description: Positive integer representing lookback tracking window size.
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Chronological list of orders matching lookup criteria.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+
+  /orders/semantic_search:
+    get:
+      summary: Semantic Order Search
+      description: Executes an embedding-based similarity search using multi-dimensional vector math across order contexts.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Natural language text query block containing descriptive indicators.
+          schema:
+            type: string
+            minLength: 1
+        - name: top_k
+          in: query
+          required: false
+          description: Maximum number of candidate vector matches to bubble up.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 5
+      responses:
+        '200':
+          description: Ordered list of closest matching embedding items.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SemanticSearchResult'
+        '503':
+          description: External database mapping runtimes timed out or index file faulted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPException'
+
+  /orders/ask:
+    post:
+      summary: Natural Language to SQL Agent
+      description: Resolves freeform queries by dynamically compiling natural language into executable local SQLite constructs using an agent configuration loop.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskRequest'
+      responses:
+        '200':
+          description: Successfully built, self-healed, and executed SQL query output map.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AskResponse'
+        '400':
+          description: Query requested items or context elements outside permitted database tables.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPException'
+        '502':
+          description: Agent orchestration loop failed to synthesize valid syntax after retry loops.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPException'
+        '503':
+          description: Local persistent database drivers or execution components failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPException'
+
+components:
+  schemas:
+    Order:
+      type: object
+      required:
+        - order_id
+        - customer_id
+        - order_date
+        - amount
+        - currency
+      properties:
+        order_id:
+          type: string
+        customer_id:
+          type: string
+        order_date:
+          type: string
+          format: date
+        amount:
+          type: number
+          format: float
+        currency:
+          type: string
+
+    StatsResponse:
+      type: object
+      required:
+        - total_revenue
+        - avg_order_value
+        - orders_per_day
+      properties:
+        total_revenue:
+          type: number
+          format: float
+        avg_order_value:
+          type: number
+          format: float
+        orders_per_day:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Dictionary map pairing isolated date strings with order volume counts.
+
+    AskRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          minLength: 1
+
+    AskResponse:
+      type: object
+      required:
+        - answer
+        - sql_used
+        - rows
+      properties:
+        answer:
+          type: string
+          description: Interpreted conversational answer generated back out of query executions.
+        sql_used:
+          type: string
+          description: Raw executable database code path compiled inside the LLM prompt layer.
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: List of relational rows extracted out of memory during query evaluation.
+
+    SemanticSearchResult:
+      type: object
+      required:
+        - order_id
+        - customer_id
+        - amount_usd
+        - order_date
+        - score
+      properties:
+        order_id:
+          type: string
+        customer_id:
+          type: string
+        amount_usd:
+          type: number
+          format: float
+        order_date:
+          type: string
+          format: date
+        score:
+          type: number
+          format: float
+          description: Vector distance or matching probability similarity score metrics.
+
+    HTTPException:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Context-specific message detailing why execution halted.
