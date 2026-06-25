@@ -38,13 +38,9 @@ I would implement following Guardrails:
 - expose only an allowlisted semantic schema
 - validate generated SQL (use LLM-as-a-judge)
 - SQL policy checks: reject queries that attempt to select raw PII, broad exports, or unbounded joins.
-- enforce row/column-level security at the DB (Governance layer like Unity Catalog in Databricks)
 
-My answer for Guardrails will not change for on-prem because private hosting lowers exposure, but it does not eliminate the risk of the model seeing or revealing more than it should. The model can make mistakes even in a private environment:
-- wrong joins,
-- missing filters,
-- unbounded queries,
-- leaking columns
+<img width="629" height="283" alt="Screenshot 2026-06-25 at 6 16 29 PM" src="https://github.com/user-attachments/assets/11279691-bfe2-4caf-afb6-f2f5268fd5f6" />
+
 
 ## Highest-leverage architectural choice - Single-Tenant File Isolation + Application LRU Caching
 The major trade-offs are:
