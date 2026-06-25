@@ -23,3 +23,11 @@ Tier 2 (Standard / Small-to-Medium Tenants): A single shared regional index with
 
 3. Cold Storage Optimization
 To save active memory costs, idle Tier-1 indices are serialized in regional block storage. An LRU cache dynamically loads the .faiss files into server RAM only when an active user session begins, releasing them after a period of inactivity.
+
+## LLM backend per tenant — 
+Route model selection in a dedicated LLM gateway / control plane that sits between the app and all model backends, not inside the prompt template layer. The application should resolve the tenant first, then ask the gateway which backend to use: cloud API for most tenants, private/on-prem Llama for customers that require it.
+<img width="1420" height="278" alt="Screenshot 2026-06-25 at 10 53 12 AM" src="https://github.com/user-attachments/assets/80f1c1a7-52da-4412-8047-1b93501ba940" />
+Keep tenant routing and residency policy in the gateway layer.
+Keep the prompt template layer generic and output-agnostic.
+Keep provider-specific transforms in thin adapters.
+Store tenant policy in config or a policy service so that it can switch backends without changing prompts.
