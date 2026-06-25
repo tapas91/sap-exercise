@@ -45,3 +45,10 @@ My answer for Guardrails will not change for on-prem because private hosting low
 - missing filters,
 - unbounded queries,
 - leaking columns
+
+## Highest-leverage architectural choice - Single-Tenant File Isolation + Application LRU Caching
+The major trade-offs are:
+- Cold-Start Latency: When a user from an idle enterprise account logs in after hours of inactivity, their first query hits a performance bottleneck. The system will experience a 1-to-2 second delay while the application server fetches their specific .faiss vector graph and SQLite file from disk and loads them into RAM.
+- Operational State Management: We moved the burden of data lifecycle management out of the database engine and into our own code. We now have to explicitly write, test, and maintain code that handles file locks, concurrent read/write syncs, and memory release policies—increasing the complexity of our core application logic.
+
+These trade-offs are acceptable because they completely eliminate the risk of cross-tenant data leakage and allowed us to clear strict enterprise legal reviews (GDPR and KSA compliance) with zero friction.
