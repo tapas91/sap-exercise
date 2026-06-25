@@ -8,3 +8,5 @@ data:
   ORDERS_CSV_PATH: "/data/orders_cleaned.csv"
   ORDERS_DB_PATH: "/data/orders.db"
   OPENROUTER_MODEL: "openai/gpt-4o-mini"
+  SEMANTIC_EMBEDDING_MODEL: "sentence-transformers/all-MiniLM-L6-v2"
+  SEMANTIC_INDEX_DIR: "/data/semantic_index"
