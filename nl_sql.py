@@ -368,7 +368,7 @@ async def sql_executor(state: AgentState) -> dict[str, Any]:
             "attempt": state["attempt"] + 1
         }
 
-# 4. Routing Logic matching the 2-attempt loop
+# Routing Logic matching the 2-attempt loop
 def should_continue(state: AgentState) -> str:
     # Check if an exception error flag was thrown during execution
     if state["last_error"] is not None:
@@ -386,7 +386,7 @@ def should_continue(state: AgentState) -> str:
     # On success (no errors), route cleanly to termination
     return END
 
-# 5. Graph Compilation
+# Graph Compilation
 def create_agent_graph() -> StateGraph:
     workflow = StateGraph(AgentState)
     
