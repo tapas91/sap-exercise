@@ -38,8 +38,7 @@ I would implement following Guardrails:
 - expose only an allowlisted semantic schema
 - validate generated SQL (use LLM-as-a-judge)
 - SQL policy checks: reject queries that attempt to select raw PII, broad exports, or unbounded joins.
-
-<img width="629" height="283" alt="Screenshot 2026-06-25 at 6 16 29 PM" src="https://github.com/user-attachments/assets/11279691-bfe2-4caf-afb6-f2f5268fd5f6" />
+<img width="774" height="413" alt="Screenshot 2026-06-25 at 6 19 03 PM" src="https://github.com/user-attachments/assets/320abbf4-477a-4845-af1a-80b8b470f455" />
 
 
 ## Highest-leverage architectural choice - Single-Tenant File Isolation + Application LRU Caching
