@@ -9,17 +9,17 @@ One index per tenant is a better approch, however a hybrid approach could be a b
 
 **The Hybrid Approach:**
 
-To balance strict data sovereignty with infrastructure costs, we can group and split the 50 tenants using a two-layered hybrid model:
+To balance data sovereignty with infrastructure costs, we can deploy a two-layered hybrid model:
 
-1. Hard Regional Separation (Sovereignty Layer)
-First, isolate the infrastructure into three completely independent regional deployments: us-east, eu-west, and a domestic KSA cloud node. Data never leaves its home region, keeping it fully compliant with GDPR and KSA regulations at rest.
+1. Regional Isolation (Sovereignty Layer)
+We host three completely independent regional deployments: us-east, eu-west, and a domestic KSA cloud node. Data never leaves its home region, ensuring full compliance with GDPR and KSA regulations at rest.
 
 2. Selective Tenant Tiering (Cost & Risk Layer)
-Inside each regional pod, split the customers by size and liability rather than treating everyone the same:
+Inside each regional pod, customers are split by size and risk profile:
 
-Tier 1 (Large / High-Audit Enterprises): Give these accounts their own dedicated per-tenant index files. This ensures absolute process isolation, guarantees zero data leakage, and delivers clean, noise-free query performance.
+Tier 1 (Large / High-Audit Enterprises): Dedicated per-tenant index files for absolute process isolation, zero data leakage, and noise-free query performance.
 
-Tier 2 (Standard / Small-to-Medium Tenants): Combine smaller accounts into a single shared regional index using server-side namespace pre-filtering. This prevents the baseline RAM and graph-link overhead from spiking unnecessarily.
+Tier 2 (Standard / Small-to-Medium Tenants): A single shared regional index with server-side namespace pre-filtering to minimize baseline RAM and graph-link overhead. It can also have multiple small indexes where small ones can be combined \. (Compaction)
 
 3. Cold Storage Optimization
-Keep idle Tier-1 indices serialized in regional block storage and dynamically load them into memory via an LRU cache only when active sessions begin.
+To save active memory costs, idle Tier-1 indices are serialized in regional block storage. An LRU cache dynamically loads the .faiss files into server RAM only when an active user session begins, releasing them after a period of inactivity.
