@@ -15,6 +15,8 @@ COPY --from=builder /install /usr/local
 COPY app.py etl.py db.py nl_sql.py semantic_search.py ./
 COPY data/orders_cleaned.csv /data/orders_cleaned.csv
 
+RUN mkdir -p /app/data
+RUN touch /app/data/my_app.log
 RUN chown -R appuser:appuser /app /data
 
 USER appuser
